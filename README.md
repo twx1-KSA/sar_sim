@@ -36,23 +36,66 @@ Built with PX4 SITL, Gazebo Harmonic, ROS 2 Humble and Python, on Ubuntu 22.04.
 ## 1. Install on a new PC (step by step)
 
 Do the steps in order. Each step ends with a **Check**: don't continue until the check passes.
-Total time is about 1–2 hours, mostly downloads and the first PX4 build.
+Total time is about 2–3 hours, mostly downloads and the first PX4 build.
 
-### Step 0: Hardware and operating system
+This guide uses **Windows + VMware Workstation** with an **Ubuntu 22.04** virtual machine.
+ROS 2 Humble requires Ubuntu 22.04.
 
-- **Ubuntu 22.04 LTS (Desktop), installed directly on the PC, not in a virtual machine.**
-  ROS 2 Humble requires 22.04. A VM has no real GPU, so Gazebo renders the cameras on the CPU,
-  which is several times slower.
-- Recommended: 8+ CPU cores, 16 GB+ RAM, an NVIDIA GPU, 60 GB free disk.
+> **Performance in a VM.** A VMware VM can't use the PC's GPU for Gazebo's camera sensors, so
+> they are rendered on the CPU. The more CPU cores and RAM you give the VM, the faster the
+> simulation runs. `start_drones.sh` detects the VM and switches to software rendering by
+> itself. In tests it was much faster than VMware's 3D driver for the cameras.
 
-If the PC has an NVIDIA GPU, install its driver:
+### Step 0a: Create the virtual machine
+
+1. Install **VMware Workstation Pro** on Windows (free for personal use) from
+   https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion
+2. Download the **Ubuntu 22.04 LTS Desktop** ISO (`ubuntu-22.04.x-desktop-amd64.iso`) from
+   https://releases.ubuntu.com/22.04/
+3. In VMware: **File → New Virtual Machine → Typical**. Select the Ubuntu ISO and follow the
+   wizard. Name the VM, for example `SAR-Ubuntu22`.
+4. Before the first start, open **Edit virtual machine settings** and set:
+
+| Setting | Value |
+|---|---|
+| **Processors** | 1 processor, **as many cores as possible, leaving 2 for Windows** (for example 10 of 12, or 14 of 16) |
+| **Memory** | **at least 16 GB**, about half to two-thirds of the PC's RAM (4 drones need about 8 GB) |
+| **Hard disk** | **100 GB**, "Store virtual disk as a single file" |
+| **Display** | "Accelerate 3D graphics" **on**, graphics memory as high as allowed (makes the Gazebo window smoother) |
+| **Network** | NAT (default) |
+
+**Check:** the VM settings show your core count and memory.
+
+### Step 0b: Install Ubuntu in the VM
+
+1. Start the VM and choose **Install Ubuntu**.
+2. Choose **Normal installation** and tick **Download updates while installing**.
+3. Choose **Erase disk and install Ubuntu**. This only erases the VM's virtual disk, not Windows.
+4. Create your user. With username `twx`, the paths in this guide match exactly; any username
+   works, because the scripts use `$HOME`.
+5. Restart when asked, then log in.
+
+**Check:** in a terminal (`Ctrl+Alt+T`), `lsb_release -ds` prints `Ubuntu 22.04.x LTS`.
+
+### Step 0c: VMware tools, updates, and the Xorg desktop session
 
 ```bash
-sudo ubuntu-drivers autoinstall
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y open-vm-tools open-vm-tools-desktop
 sudo reboot
 ```
 
-**Check:** `lsb_release -ds` prints `Ubuntu 22.04.x LTS`. With an NVIDIA GPU, `nvidia-smi` shows a table with your GPU.
+`open-vm-tools-desktop` gives copy/paste between Windows and the VM and resizes the screen
+with the window.
+
+Then use the **Xorg** session, because the Gazebo window has problems on Wayland:
+
+1. Log out.
+2. On the login screen, click your name, then the **gear icon** at the bottom right.
+3. Choose **Ubuntu on Xorg**, and log in.
+
+**Check:** `echo $XDG_SESSION_TYPE` prints `x11`, and `nproc` prints the number of cores you
+gave the VM.
 
 ### Step 1: Basic tools
 
@@ -95,6 +138,13 @@ make px4_sitl gz_x500
 
 The first build takes 5–15 minutes. A Gazebo window opens with a drone on a grey ground plane,
 and the terminal shows a `pxh>` prompt.
+
+If the Gazebo window stays black, flickers, or Gazebo crashes (common with VMware's 3D driver),
+press `Ctrl+C` and start it with software rendering instead:
+
+```bash
+LIBGL_ALWAYS_SOFTWARE=1 make px4_sitl gz_x500
+```
 
 **Check:** type `commander takeoff` at the `pxh>` prompt. The drone takes off in Gazebo.
 Then press `Ctrl+C` to stop.
@@ -278,7 +328,7 @@ What you should see:
 4. Drone 3 flies there and hovers. Terminal 3 prints `T1 CONFIRMED` and saves a close-up.
 5. The search drones finish and land on their pads.
 
-A full run takes about 30–45 minutes on a slow PC, less on a fast one.
+A full run took about 30–45 minutes in a 4-core VM; it gets faster with more CPU cores in the VM.
 
 Watch the results live:
 
@@ -420,7 +470,9 @@ sar_sim/
 | `ImportError: numpy.core.multiarray failed to import`, or cv2 errors | A pip-installed NumPy 2.x is hiding Ubuntu's NumPy 1.x. Run `pip3 install --user "numpy<2"`. |
 | `ModuleNotFoundError: pymavlink` | `pip3 install --user pymavlink`. Don't run the scripts with `python3 -I`. |
 | Camera topics exist but no images arrive | Image topics are lazy: they only render while something subscribes. For the 1280×960 RGB topics use reliable QoS (best-effort drops large frames). |
-| Simulation slower than real time | In a VM, `start_drones.sh` uses software rendering automatically. Run fewer drones (`start_drones.sh 0 1`) or use a PC with a real GPU. |
+| Simulation slower than real time | Give the VM more CPU cores and RAM (VM settings, with the VM shut down). Run fewer drones (`start_drones.sh 0 1`). Close other programs on Windows. To compare, try VMware's 3D driver once with `SOFTWARE_GL=0 ~/sar_sim/start_drones.sh` and keep whichever is faster. |
+| Gazebo window black, flickering or crashing in the VM | Use the Xorg session (Step 0c). Open the window with software rendering: `env -u WAYLAND_DISPLAY LIBGL_ALWAYS_SOFTWARE=1 gz sim -g` (attaches to an already running simulation), or start the drones with `GUI=1 ~/sar_sim/start_drones.sh`. |
+| Copy/paste between Windows and the VM doesn't work | `sudo apt install -y open-vm-tools-desktop` and reboot the VM. |
 | `gz sim` keeps running after `Ctrl+C` | `~/sar_sim/stop_all.sh` (it force-stops stuck processes). |
 | Arming refused: `No connection to the GCS` | Normal without QGroundControl. The SAR scripts identify themselves as a GCS. |
 
