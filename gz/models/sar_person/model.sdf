@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <!-- Missing-person target for the SAR simulation.
+       Mesh and textures: "Rescue Randy" by Open Robotics (Gazebo Fuel), stored locally
+       so the world loads without internet. Origin is at the feet; 1.82 m tall, Z up.
+       To place the person lying down, give the include a pose with roll or pitch 1.5708. -->
+  <model name="sar_person">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>meshes/rescue_randy.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>meshes/rescue_randy.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/rescue_randy_albedo.png</albedo_map>
+              <normal_map>materials/textures/rescue_randy_normal.png</normal_map>
+              <metalness_map>materials/textures/rescue_randy_metalness.png</metalness_map>
+              <roughness_map>materials/textures/rescue_randy_roughness.png</roughness_map>
+            </metal>
+          </pbr>
+        </material>
+        <!-- Body heat: the texture's grey level maps linearly from min_temp (black)
+             to max_temp (white). 293 K = 20 C clothing, 310 K = 37 C exposed skin. -->
+        <plugin filename="gz-sim-thermal-system" name="gz::sim::systems::Thermal">
+          <heat_signature>materials/textures/RescueRandy_Thermal.png</heat_signature>
+          <min_temp>293</min_temp>
+          <max_temp>310</max_temp>
+        </plugin>
+      </visual>
+    </link>
+  </model>
+</sdf>

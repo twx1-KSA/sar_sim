@@ -1,0 +1,13 @@
+# Generated at run time (re-created by the scripts)
+missions/
+detections/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editors / OS
+.vscode/
+*.swp
+.DS_Store

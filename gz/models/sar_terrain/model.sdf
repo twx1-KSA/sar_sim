@@ -1,0 +1,38 @@
+
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="sar_terrain">
+    <static>true</static>
+
+    <link name="terrain_link">
+
+      <!-- Terrain Collision -->
+      <collision name="terrain_collision">
+        <geometry>
+          <heightmap>
+            <uri>materials/textures/heightmap.png</uri>
+            <size>500 500 90</size>
+            <pos>0 0 0</pos>
+          </heightmap>
+        </geometry>
+      </collision>
+
+      <!-- Terrain Visual -->
+      <visual name="terrain_visual">
+        <geometry>
+          <heightmap>
+            <uri>materials/textures/heightmap.png</uri>
+            <size>500 500 90</size>
+            <pos>0 0 0</pos>
+            <texture>
+              <diffuse>materials/textures/terrain_texture.png</diffuse>
+              <normal>materials/textures/normal.png</normal>
+              <size>50</size>
+            </texture>
+          </heightmap>
+        </geometry>
+      </visual>
+
+    </link>
+  </model>
+</sdf>
