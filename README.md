@@ -162,10 +162,29 @@ It should print `python OK`. NumPy must be **1.x** (Ubuntu 22.04 ships 1.21). If
 
 ### Step 7: Get this project and link it into PX4
 
+The repository is private, so the new PC needs its own SSH key on your GitHub account.
+
+**7a. Create an SSH key on the new PC and show its public half:**
+
+```bash
+ssh-keygen -t ed25519 -C "TWX sar_sim $(hostname)" -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub
+```
+
+**7b. Add it to GitHub:** open https://github.com/settings/ssh/new, enter a title
+(for example `New PC`), paste the line printed by `cat`, and click **Add SSH key**.
+
+**Check:** `ssh -T git@github.com` answers `Hi twx1-KSA! You've successfully authenticated`.
+Type `yes` if it asks whether to trust github.com.
+
+**7c. Clone the project and link it into PX4:**
+
 ```bash
 cd ~
-git clone <YOUR-REPOSITORY-URL> sar_sim
+git clone git@github.com:twx1-KSA/sar_sim.git sar_sim
 cd ~/sar_sim
+git config user.name "TWX"
+git config user.email "260037218+twx1-KSA@users.noreply.github.com"
 ./install.sh
 ```
 
